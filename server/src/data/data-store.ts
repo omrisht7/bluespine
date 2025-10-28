@@ -2,7 +2,7 @@ import { reconcileClaims } from "../services/reconcile-service";
 import { Claim } from "../types/Claim";
 import { Invoice } from "../types/Invoice";
 import { Patient } from "../types/Patient";
-import { Reconciliation } from "../types/Reconciliation";
+import { Reconciliation, ReconciliationStatus } from "../types/Reconciliation";
 
 class DataStore {
     private patients: Patient[] = [];
@@ -25,21 +25,38 @@ class DataStore {
     }
 
     addInvoices(newInvoices: Invoice[]) {
-        const existingIds = new Set(this.invoices.map(i => i.invoice_id));
-        const filtered = newInvoices.filter(i => !existingIds.has(i.invoice_id));
+        try {
+            const CHUNK_SIZE = 10000;
+            const existingIds = new Set(this.invoices.map(i => i.invoice_id));
+            
+            let filtered: Invoice[] = [];
+            for (let i = 0; i < newInvoices.length; i += CHUNK_SIZE) {
+                const chunk = newInvoices.slice(i, i + CHUNK_SIZE);
+                const filteredChunk = chunk.filter(i => !existingIds.has(i.invoice_id));
+                filtered.push(...filteredChunk);
+            }
 
-        if (filtered.length === 0) {
-            console.log("No new invoices to add — all duplicates ignored.");
-            return;
+            if (filtered.length === 0) {
+                console.log("No new invoices to add — all duplicates ignored.");
+                return;
+            }
+
+            for (let i = 0; i < filtered.length; i += CHUNK_SIZE) {
+                const chunk = filtered.slice(i, i + CHUNK_SIZE);
+                this.invoices.push(...chunk);
+            }
+
+            this.recalculate();
+            console.log(`Added ${filtered.length} new invoices`);
+        } catch (error) {
+            console.error('Error in addInvoices:', error);
+            throw error;
         }
-
-        this.invoices.push(...filtered);
-        this.recalculate();
-        console.log(`Added ${filtered.length} new invoices`);
     }
 
-    setPaitients(patients: Patient[]) {
+    setPatients(patients: Patient[]) {
         this.patients = patients;
+        console.log(`Set ${patients.length} patients in data store`);
     }
 
     getClaims() {
@@ -50,7 +67,7 @@ class DataStore {
         return this.invoices;
     }
 
-    getPaitients() {
+    getPatients() {
         return this.patients;
     }
 
@@ -60,13 +77,33 @@ class DataStore {
         return this.reconciliation.slice(start, end);
     }
 
+    getReconciliationFiltered(page: number, limit: number, status?: string) {
+        const filtered = status && status !== 'ALL'
+            ? this.reconciliation.filter(r => r.status.toLowerCase() === status.toLowerCase())
+            : this.reconciliation;
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const safePage = Math.min(Math.max(page, 1), totalPages);
+        const start = (safePage - 1) * limit;
+        const end = start + limit;
+
+        return {
+            page: safePage,
+            limit,
+            total,
+            totalPages,
+            data: filtered.slice(start, end),
+        };
+    }
+
     getSummary() {
         const summary = {
             totalClaims: this.reconciliation.length,
-            balanced: this.reconciliation.filter(r => r.status === "BALANCED").length,
-            overpaid: this.reconciliation.filter(r => r.status === "OVERPAID").length,
-            underpaid: this.reconciliation.filter(r => r.status === "UNDERPAID").length,
-            na: this.reconciliation.filter(r => r.status === "N/A").length,
+                balanced: this.reconciliation.filter(r => r.status === ReconciliationStatus.BALANCED).length,
+                overpaid: this.reconciliation.filter(r => r.status === ReconciliationStatus.OVERPAID).length,
+                underpaid: this.reconciliation.filter(r => r.status === ReconciliationStatus.UNDERPAID).length,
+                na: this.reconciliation.filter(r => r.status === ReconciliationStatus.NA).length,
             lastUpdated: this.lastUpdated,
         };
         return summary;

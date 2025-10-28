@@ -6,8 +6,7 @@ import { dataStore } from "./data-store";
 const NUM_PATIENTS = 2000;
 const MIN_CLAIMS_PER_PATIENT = 10;
 const MAX_CLAIMS_PER_PATIENT = 100;
-const MIN_INVOICES_PER_CLAIM = 0;
-const MAX_INVOICES_PER_CLAIM = 5;
+const MAX_INVOICES_PER_CLAIM = 4;
 
 export const initializeData = async () => {
     console.log("Generating patients...");
@@ -30,17 +29,20 @@ export const initializeData = async () => {
                 claim_id: claimId,
                 patient_id: patient.patient_id,
                 date_of_service: faker.date.past({ years: 2 }).toISOString().split("T")[0],
-                charges_amount: faker.number.float({ min: 100, max: 5000 }),
+                charges_amount: Number(faker.number.float({ min: 100, max: 5000 }).toFixed(2)),
             };
             claims.push(claim);
 
-            const numInvoices = faker.number.int({ min: MIN_INVOICES_PER_CLAIM, max: MAX_INVOICES_PER_CLAIM });
-
+            const numInvoices = faker.number.int({ min: 0, max: MAX_INVOICES_PER_CLAIM });
+            
             for (let k = 0; k < numInvoices; k++) {
                 const invoice = {
                     invoice_id: faker.string.uuid(),
                     claim_id: claimId,
-                    transaction_value: faker.number.float({ min: -1000, max: 5000 }),
+                    transaction_value: Number(faker.number.float({ 
+                        min: 50,
+                        max: 2000 
+                    }).toFixed(2)),
                 };
                 invoices.push(invoice);
             }
@@ -73,9 +75,14 @@ export const initializeData = async () => {
         ],
     });
 
-    dataStore.setPaitients(patients);
+    // Save patients to JSON file
+    fs.writeFileSync("./data/patients.json", JSON.stringify(patients, null, 2));
+
     await claimsCsvWriter.writeRecords(claims);
     await invoicesCsvWriter.writeRecords(invoices);
-}
 
-console.log("✅ Done! Files written to ./data/claims.csv and ./data/invoices.csv");
+    console.log("✅ Done! Files written to:");
+    console.log("- ./data/patients.json");
+    console.log("- ./data/claims.csv");
+    console.log("- ./data/invoices.csv");
+}

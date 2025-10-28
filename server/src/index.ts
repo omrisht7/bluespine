@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRouter from './routes';
-import { initializeData } from './data/create-data';
+import { loadInitialData } from './data/initialize';
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ app.use('/api', apiRouter);
 
 const PORT = process.env.PORT || 4000;
 
-initializeData().then(() => {
+loadInitialData().then(() => {
     app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
     });
