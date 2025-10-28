@@ -14,8 +14,7 @@ const Dashboard = () => {
             const res = await fetch(api('/api/reconciled/summary'));
             if (!res.ok) throw new Error("Failed to fetch reconciliation summary");
             return res.json();
-        },
-        staleTime: 1000 * 60 * 5,
+        }
     });
 
     if (isLoading) return <div>Loading...</div>;
