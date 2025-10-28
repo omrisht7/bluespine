@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRouter from './routes';
 import { loadInitialData } from './data/initialize';
+import { notFoundHandler, errorHandler } from './middleware/error-handler';
 
 dotenv.config();
 
@@ -11,6 +12,10 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api', apiRouter);
+
+app.use(notFoundHandler);
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
 

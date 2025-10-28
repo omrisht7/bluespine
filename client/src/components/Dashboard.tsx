@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import type { ReconciliationSummary } from '../types/reconciliation';
 import { useQuery } from '@tanstack/react-query';
 import { Column } from '../layout/styles';
+import { api } from '../config';
 import SummaryCards from './SummaryCards';
 import StatusChart from './StatusChart';
 import ReconciliationTableContainer from './ReconciliationTableContainer';
@@ -10,7 +11,7 @@ const Dashboard = () => {
     const { data: summary, isLoading, isError, error } = useQuery<ReconciliationSummary>({
         queryKey: ["reconciliationSummary"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:4000/api/reconciled/summary");
+            const res = await fetch(api('/api/reconciled/summary'));
             if (!res.ok) throw new Error("Failed to fetch reconciliation summary");
             return res.json();
         },

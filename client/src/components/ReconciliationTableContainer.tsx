@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import ReconciledTable from './ReconciledTable';
 import type { PaginatedResponse } from '../types/reconciliation';
-
-const BASE_URL = 'http://localhost:4000';
+import { api } from '../config';
 const ITEMS_PER_PAGE = 10;
 
 const STATUSES = ['ALL', 'BALANCED', 'OVERPAID', 'UNDERPAID', 'N/A'];
@@ -18,7 +17,7 @@ const ReconciliationTableContainer = () => {
         queryFn: async () => {
             const statusParam = status && status !== 'ALL' ? `&status=${encodeURIComponent(status)}` : '';
             const response = await fetch(
-                `${BASE_URL}/api/reconciled?page=${currentPage}&limit=${ITEMS_PER_PAGE}${statusParam}`
+                api(`/api/reconciled?page=${currentPage}&limit=${ITEMS_PER_PAGE}${statusParam}`)
             );
 
             if (!response.ok) {

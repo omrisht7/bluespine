@@ -15,7 +15,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { useNotification } from '../contexts/NotificationProvider';
 
-const BASE_URL = 'http://localhost:4000';
+import { api } from '../config';
 
 const UploadDialog = () => {
   const [openDialog, setOpenDialog] = useState(false);
@@ -37,7 +37,7 @@ const UploadDialog = () => {
       formData.append('file', selectedFile);
       
       const endpoint = dialogType === 'claims' ? '/api/claims' : '/api/invoices';
-      const response = await fetch(`${BASE_URL}${endpoint}`, {
+      const response = await fetch(api(endpoint), {
         method: 'POST',
         body: formData,
       });
